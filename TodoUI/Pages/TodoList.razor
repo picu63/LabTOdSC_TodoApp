@@ -1,0 +1,71 @@
+﻿@page "/todos"
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using TodoUI.Models
+@using TodoUI.Services
+@inject TodoService todoService;
+@inject ILogger<TodoList> logger;
+
+<PageTitle>Weather forecast</PageTitle>
+
+@if (todos == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <TodoForm OnNewTodoItem="NewTodoAdded"></TodoForm>
+    <MudTable Items="todos" Hover="true"  Breakpoint="Breakpoint.Sm" Loading="@isLoading">
+        <HeaderContent>
+            <MudTh>Task name</MudTh>
+            <MudTh>Completed</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Task name">@context.Task</MudTd>
+            <MudTd DataLabel="Completed">
+                <MudCheckBox T="bool" Checked="@context.Completed" CheckedChanged="@(async (isChecked) => await TodoStatusCheckboxClicked(@context, isChecked))"/>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="() => DeleteButtonClicked(context)"/>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private List<Todo> todos;
+    private bool tempTodo { get; set; }
+    private bool isLoading = true;
+
+    [Parameter]
+    public EventCallback<Todo> TodoUpdated { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        todos = (await todoService.GetAllTodos()).ToList();
+        isLoading = false;
+    }
+
+    private async Task TodoStatusCheckboxClicked(Todo item, bool isChecked)
+    {
+        await todoService.ChangeStatus(item.Id, isChecked); 
+        item.Completed = isChecked;
+    }
+
+    private async Task DeleteButtonClicked(Todo itemToDelete)
+    {
+        logger.LogInformation($"Deleting {itemToDelete}");
+        await todoService.Delete(itemToDelete.Id); 
+        todos.Remove(itemToDelete);
+    }
+
+    private async Task NewTodoAdded(Todo todo)
+    {
+        var entity = await todoService.CreateNewByName(todo.Task);
+        todos.Insert(0,entity);
+    }
+}

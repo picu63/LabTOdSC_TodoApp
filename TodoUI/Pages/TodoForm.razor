@@ -1,0 +1,38 @@
+﻿@using TodoUI.Services
+@using TodoUI.Models
+@inject ILogger<TodoForm> logger
+<h3>Add Todo</h3>
+
+<MudForm @ref="form" @bind-isValid="@success">
+    <MudTextField T="string" @bind-Value="todoText" HelperText="@helperText"></MudTextField>
+    <MudText Color="Color.Error">@errorVisibleMessage</MudText>
+    <MudButton Disabled="!success" OnClick="AddNewTodo" Color="Color.Primary">ADD TODO</MudButton>
+</MudForm>
+@code {
+    private const string helperText = "Write your TODO item here";
+    private bool success;
+    private string errorVisibleMessage;
+    private string todoText;
+    private MudForm form;
+
+    [Parameter]
+    public EventCallback<Todo> OnNewTodoItem { get; set; }
+
+    private async Task AddNewTodo()
+    {
+        if (string.IsNullOrWhiteSpace(todoText))
+        {
+            errorVisibleMessage = "Todo text cannot be empty" ;
+            logger.LogError($"Invalid input in todo textfield: {errorVisibleMessage}");
+            return;
+        }
+        var todo = new Todo()
+        {
+            Id = Guid.NewGuid().ToString(),
+            Completed = false,
+            Task = todoText
+        };
+        await OnNewTodoItem.InvokeAsync(todo);
+        todoText = string.Empty;
+    }
+}
