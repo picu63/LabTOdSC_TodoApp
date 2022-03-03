@@ -27,7 +27,7 @@ public class TodoService
     {
         var requestUri = $"api/todos/{todoId}";
         logger.LogInformation($"Changing status of TODO {todoId} to {(isCompleted ? "completed" : "not completed")}");
-        var response = await httpClient.PutAsJsonAsync(requestUri, new {Completed = isCompleted });
+        var response = await httpClient.PutAsJsonAsync(requestUri, isCompleted);
         if (!response.IsSuccessStatusCode)
         {
             throw new Exception(response.StatusCode.ToString());
@@ -48,17 +48,12 @@ public class TodoService
     public async Task<Todo> CreateNewByName(string taskName)
     {
         var requestUri = $"api/todos";
-        var newTodo = new { Completed = false, Task = taskName};
-        var response = await httpClient.PostAsJsonAsync(requestUri, newTodo);
+        var response = await httpClient.PostAsJsonAsync(requestUri, taskName);
         if (!response.IsSuccessStatusCode)
         {
             throw new Exception(response.StatusCode.ToString());
         }
-        var id = (await response.Content.ReadFromJsonAsync<CreateResponse>()).Id;
-
-        return new Todo(){Completed = newTodo.Completed, Task = newTodo.Task, Id = id};
+        return (await response.Content.ReadFromJsonAsync<Todo>());
     }
-
-    record CreateResponse(string Id);
 }
 
