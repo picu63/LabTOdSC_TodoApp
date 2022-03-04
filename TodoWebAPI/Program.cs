@@ -10,7 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<TodosDbContext>(c =>
-    c.UseSqlServer(builder.Configuration.GetConnectionString("TodosDatabase")));
+    c.UseCosmos(builder.Configuration.GetConnectionString("TodosDatabase"), "TodoDb"));
 
 var app = builder.Build();
 
