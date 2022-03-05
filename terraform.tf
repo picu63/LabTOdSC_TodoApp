@@ -11,18 +11,18 @@ terraform {
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
-  subscription_id = "e1153580-058f-43cc-ade4-ffa315b2f513"
+  subscription_id = var.subscription_id
 }
 
 # Create a resource group
 resource "azurerm_resource_group" "labtodsc" {
-  name     = "labtodscpolearczyk"
-  location = "East US"
+  name     = "labtodscpolearczyk5"
+  location = "West Europe"
 }
 
 # Create an app service to host the web app
 resource "azurerm_app_service_plan" "service_plan" {
-  name                = "todo_web_app_plan"
+  name                = "todo_web_plan"
   location            = azurerm_resource_group.labtodsc.location
   resource_group_name = azurerm_resource_group.labtodsc.name
 
@@ -32,8 +32,36 @@ resource "azurerm_app_service_plan" "service_plan" {
   }
 }
 
-resource "azurerm_app_service" "web_app" {
-  name                = "web-app-service"
+resource "azurerm_api_management" "api_mg" {
+  name                = "todo-api-mg"
+  location            = azurerm_resource_group.labtodsc.location
+  resource_group_name = azurerm_resource_group.labtodsc.name
+  publisher_name      = "Piotr Olearczyk"
+  publisher_email     = "po049691@student.ath.edu.pl"
+
+  sku_name = "Developer_1"
+}
+
+resource "azurerm_app_service" "web_api" {
+  name                = "web-api-service"
+  location            = azurerm_resource_group.labtodsc.location
+  resource_group_name = azurerm_resource_group.labtodsc.name
+  app_service_plan_id = azurerm_app_service_plan.service_plan.id
+
+  site_config {
+    dotnet_framework_version = "v6.0"
+    scm_type                 = "LocalGit"
+  }
+
+  connection_string {
+    name  = "TodosDatabase"
+    type  = "Custom"
+    value = "AccountEndpoint=${azurerm_cosmosdb_account.db.endpoint};AccountKey=${azurerm_cosmosdb_account.db.primary_key};"
+  }
+}
+
+resource "azurerm_app_service" "web_ui" {
+  name                = "web-api-service"
   location            = azurerm_resource_group.labtodsc.location
   resource_group_name = azurerm_resource_group.labtodsc.name
   app_service_plan_id = azurerm_app_service_plan.service_plan.id
@@ -44,51 +72,39 @@ resource "azurerm_app_service" "web_app" {
   }
 
   app_settings = {
-    "SOME_KEY" = "some-value"
-  }
-
-  connection_string {
-    name  = "Database"
-    type  = "SQLServer"
-    value = "Server=${azurerm_mssql_database.test.name}.mydomain.com;Integrated Security=SSPI"
+    "TodoApi:BaseUrl" = "https://${azurerm_app_service.web_api.default_site_hostname}"
   }
 }
 
-resource "azurerm_storage_account" "todo_sa" {
-  name                     = "todosatodscpolearczyk"
-  resource_group_name      = azurerm_resource_group.labtodsc.name
-  location                 = azurerm_resource_group.labtodsc.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+resource "random_integer" "ri" {
+  min = 10000
+  max = 99999
 }
 
-resource "azurerm_mssql_server" "todo_db" {
-  name                         = "todo-db-server"
-  resource_group_name          = azurerm_resource_group.labtodsc.name
-  location                     = azurerm_resource_group.labtodsc.location
-  version                      = "12.0"
-  administrator_login          = "4dm1n157r470r"
-  administrator_login_password = "4-v3ry-53cr37-p455w0rd"
+resource "azurerm_cosmosdb_account" "db" {
+  name                = "todo-cosmos-db-${random_integer.ri.result}"
+  location            = azurerm_resource_group.labtodsc.location
+  resource_group_name = azurerm_resource_group.labtodsc.name
+  offer_type          = "Standard"
+  kind                = "GlobalDocumentDB"
+
+  enable_automatic_failover = true
+
+  consistency_policy {
+    consistency_level       = "BoundedStaleness"
+    max_interval_in_seconds = 300
+    max_staleness_prefix    = 100000
+  }
+
+  geo_location {
+    location          = azurerm_resource_group.labtodsc.location
+    failover_priority = 0
+  }
 }
 
-resource "azurerm_mssql_database" "test" {
-  name           = "todo_db"
-  server_id      = azurerm_mssql_server.todo_db.id
-  collation      = "SQL_Latin1_General_CP1_CI_AS"
-  license_type   = "LicenseIncluded"
-  max_size_gb    = 4
-  read_scale     = true
-  sku_name       = "BC_Gen5_2"
-  zone_redundant = true
-
-  extended_auditing_policy {
-    storage_endpoint                        = azurerm_storage_account.todo_sa.primary_blob_endpoint
-    storage_account_access_key              = azurerm_storage_account.todo_sa.primary_access_key
-    storage_account_access_key_is_secondary = true
-    retention_in_days                       = 6
-  }
-
-  tags = {
-    foo = "bar"
-  }
+resource "azurerm_cosmosdb_sql_database" "todo_db_sql" {
+  name                = "todo-cosmos-mongo-db"
+  resource_group_name = azurerm_cosmosdb_account.db.resource_group_name
+  account_name        = azurerm_cosmosdb_account.db.name
+  throughput          = 400
 }
