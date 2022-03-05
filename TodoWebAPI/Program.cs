@@ -17,13 +17,15 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+
 }
 else
 {
     app.UseHttpsRedirection();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors(p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 app.UseAuthorization();
