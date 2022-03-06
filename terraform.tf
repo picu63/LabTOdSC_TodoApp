@@ -11,12 +11,12 @@ terraform {
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
-  subscription_id = var.subscription_id
+  subscription_id = "e1153580-058f-43cc-ade4-ffa315b2f513"
 }
 
 # Create a resource group
 resource "azurerm_resource_group" "labtodsc" {
-  name     = "labtodscpolearczyk5"
+  name     = "labtodscpolearczyk"
   location = "West Europe"
 }
 
@@ -32,15 +32,15 @@ resource "azurerm_app_service_plan" "service_plan" {
   }
 }
 
-resource "azurerm_api_management" "api_mg" {
-  name                = "todo-api-mg"
-  location            = azurerm_resource_group.labtodsc.location
-  resource_group_name = azurerm_resource_group.labtodsc.name
-  publisher_name      = "Piotr Olearczyk"
-  publisher_email     = "po049691@student.ath.edu.pl"
+# resource "azurerm_api_management" "api_mg" {
+#   name                = "todo-api-mg"
+#   location            = azurerm_resource_group.labtodsc.location
+#   resource_group_name = azurerm_resource_group.labtodsc.name
+#   publisher_name      = "Piotr Olearczyk"
+#   publisher_email     = "po049691@student.ath.edu.pl"
 
-  sku_name = "Developer_1"
-}
+#   sku_name = "Developer_1"
+# }
 
 resource "azurerm_app_service" "web_api" {
   name                = "web-api-service"
@@ -61,7 +61,7 @@ resource "azurerm_app_service" "web_api" {
 }
 
 resource "azurerm_app_service" "web_ui" {
-  name                = "web-api-service"
+  name                = "todo-web-ui"
   location            = azurerm_resource_group.labtodsc.location
   resource_group_name = azurerm_resource_group.labtodsc.name
   app_service_plan_id = azurerm_app_service_plan.service_plan.id
