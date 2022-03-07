@@ -20,6 +20,16 @@ resource "azurerm_resource_group" "labtodsc" {
   location = "West Europe"
 }
 
+resource "azurerm_api_management" "api_mg" {
+  name                = "todo-api-mg-${random_integer.ri.result}"
+  location            = azurerm_resource_group.labtodsc.location
+  resource_group_name = azurerm_resource_group.labtodsc.name
+  publisher_name      = "Piotr Olearczyk"
+  publisher_email     = "po049691@student.ath.edu.pl"
+
+  sku_name = "Developer_1"
+}
+
 # Create an app service to host the web app
 resource "azurerm_app_service_plan" "service_plan" {
   name                = "todo_web_plan"
@@ -31,16 +41,6 @@ resource "azurerm_app_service_plan" "service_plan" {
     size = "S1"
   }
 }
-
-# resource "azurerm_api_management" "api_mg" {
-#   name                = "todo-api-mg"
-#   location            = azurerm_resource_group.labtodsc.location
-#   resource_group_name = azurerm_resource_group.labtodsc.name
-#   publisher_name      = "Piotr Olearczyk"
-#   publisher_email     = "po049691@student.ath.edu.pl"
-
-#   sku_name = "Developer_1"
-# }
 
 resource "azurerm_app_service" "web_api" {
   name                = "web-api-service"
@@ -118,11 +118,3 @@ resource "azurerm_application_insights" "appinsights" {
   resource_group_name = azurerm_resource_group.labtodsc.name
   application_type    = "web"
 }
-
-# output "instrumentation_key" {
-#   value = azurerm_application_insights.appinsights.instrumentation_key
-# }
-
-# output "app_id" {
-#   value = azurerm_application_insights.appinsights.app_id
-# }
