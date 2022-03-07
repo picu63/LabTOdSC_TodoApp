@@ -11,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<TodosDbContext>(c =>
     c.UseCosmos(builder.Configuration.GetConnectionString("TodosDatabase"), "TodoDb"));
+builder.Services.AddApplicationInsightsTelemetry();
 
 var app = builder.Build();
 

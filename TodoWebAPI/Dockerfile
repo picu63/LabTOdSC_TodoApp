@@ -1,22 +1,13 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine as build
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
-
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-WORKDIR /src
-COPY ["TodoWebAPI/TodoWebAPI.csproj", "TodoWebAPI/"]
-RUN dotnet restore "TodoWebAPI/TodoWebAPI.csproj"
 COPY . .
-WORKDIR "/src/TodoWebAPI"
-RUN dotnet build "TodoWebAPI.csproj" -c Release -o /app/build
+RUN dotnet restore
+RUN dotnet publish -o /app/published-app
 
-FROM build AS publish
-RUN dotnet publish "TodoWebAPI.csproj" -c Release -o /app/publish
-
-FROM base AS final
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine as runtime
 WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "TodoWebAPI.dll"]
+COPY --from=build /app/published-app /app
+ENTRYPOINT [ "dotnet", "dev-certs https --trust"]
+ENTRYPOINT [ "dotnet", "/app/TodoWebAPI.dll" ]

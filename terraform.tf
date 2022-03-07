@@ -53,25 +53,15 @@ resource "azurerm_app_service" "web_api" {
     scm_type                 = "LocalGit"
   }
 
+  app_settings = {
+    "APPINSIGHTS_INSTRUMENTATIONKEY"      = azurerm_application_insights.appinsights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.appinsights.connection_string
+  }
+
   connection_string {
     name  = "TodosDatabase"
     type  = "Custom"
     value = "AccountEndpoint=${azurerm_cosmosdb_account.db.endpoint};AccountKey=${azurerm_cosmosdb_account.db.primary_key};"
-  }
-}
-
-resource "azurerm_app_service" "web_ui" {
-  name                = "todo-web-ui-${random_integer.ri.result}"
-  location            = azurerm_resource_group.labtodsc.location
-  resource_group_name = azurerm_resource_group.labtodsc.name
-  app_service_plan_id = azurerm_app_service_plan.service_plan.id
-
-  site_config {
-    dotnet_framework_version = "v6.0"
-  }
-
-  app_settings = {
-    "TodoApi:BaseUrl" = "https://${azurerm_app_service.web_api.default_site_hostname}"
   }
 }
 
@@ -83,6 +73,10 @@ resource "azurerm_storage_account" "storage_account" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
+
+  static_website {
+    index_document = "index.html"
+  }
 }
 
 resource "random_integer" "ri" {
@@ -117,3 +111,18 @@ resource "azurerm_cosmosdb_sql_database" "todo_db_sql" {
   account_name        = azurerm_cosmosdb_account.db.name
   throughput          = 400
 }
+
+resource "azurerm_application_insights" "appinsights" {
+  name                = "todo-appinsights"
+  location            = azurerm_resource_group.labtodsc.location
+  resource_group_name = azurerm_resource_group.labtodsc.name
+  application_type    = "web"
+}
+
+# output "instrumentation_key" {
+#   value = azurerm_application_insights.appinsights.instrumentation_key
+# }
+
+# output "app_id" {
+#   value = azurerm_application_insights.appinsights.app_id
+# }

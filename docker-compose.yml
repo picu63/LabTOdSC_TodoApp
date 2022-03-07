@@ -5,13 +5,15 @@ services:
     #image: ${DOCKER_REGISTRY-}todoui
     build: ./TodoUI/
     ports:
-        - 8080:80
+        - 80:80
+    depends_on:
+        - todowebapi
 
   todowebapi:
     #image: ${DOCKER_REGISTRY-}todowebapi
     build: ./TodoWebAPI/
     ports:
-        - 8081:5192
+        - 8081:80
     depends_on:
         - db
   db:
