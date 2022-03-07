@@ -61,19 +61,28 @@ resource "azurerm_app_service" "web_api" {
 }
 
 resource "azurerm_app_service" "web_ui" {
-  name                = "todo-web-ui"
+  name                = "todo-web-ui-${random_integer.ri.result}"
   location            = azurerm_resource_group.labtodsc.location
   resource_group_name = azurerm_resource_group.labtodsc.name
   app_service_plan_id = azurerm_app_service_plan.service_plan.id
 
   site_config {
     dotnet_framework_version = "v6.0"
-    scm_type                 = "LocalGit"
   }
 
   app_settings = {
     "TodoApi:BaseUrl" = "https://${azurerm_app_service.web_api.default_site_hostname}"
   }
+}
+
+resource "azurerm_storage_account" "storage_account" {
+  name                = "todosa"
+  resource_group_name = azurerm_resource_group.labtodsc.name
+
+  location                 = azurerm_resource_group.labtodsc.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
 }
 
 resource "random_integer" "ri" {
